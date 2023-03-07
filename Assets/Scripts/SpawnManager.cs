@@ -10,8 +10,22 @@ public class SpawnManager : MonoBehaviour
     [SerializeField] private GameObject _enemyContainer;
     // Gain access to the powerup game object
     [SerializeField] private GameObject[] _powerupPrefabs;
+
+    [SerializeField] float spawnTimer;
+    int randomSpawn;
+    
     // Check if the enemies has stopped spawning
     private bool _stopSpawning = false;
+
+    private void Start()
+    {
+        
+    }
+
+    private void Update()
+    {
+        
+    }
 
     public void StartSpawning()
     {
@@ -51,14 +65,13 @@ public class SpawnManager : MonoBehaviour
             float randomX = Random.Range(-_maxXpos, _maxXpos);
             // Random position to spawn
             Vector3 spawnPos = new Vector3(randomX, 8f, 0);
-            // Spawn random powerup ID's
-            int randomPowerup = Random.Range(0, 3);
+            // Spawn random powerup ID's, HEALTH UPDATED!!!!
+            int randomPowerup = Random.Range(0, 3); 
             // Create a reference to the Instantiated powerup prefab
             GameObject spawnPowerup = Instantiate(_powerupPrefabs[randomPowerup], spawnPos, Quaternion.identity);
             // Spawn at random times between 3 to 7 seconds
-            yield return new WaitForSeconds(Random.Range(3f, 8f));
+            yield return new WaitForSeconds(Random.Range(3f, 8f));                       
         }
-
     }
 
     // Method to stop spawning when player dies

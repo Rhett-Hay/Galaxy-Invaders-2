@@ -25,12 +25,11 @@ public class PlayerBehavior : MonoBehaviour
     private bool _isShieldActive;
     // Get Shield prefab game object
     [SerializeField] GameObject _shield;
-    // Is Ammo powerup active
-    /*[SerializeField] private bool _isAmmoActive;
-    // Maximum ammo amount for the Player
-    [SerializeField] private int _maxAmmo;
-    // Current amount of ammo for Player
-    [SerializeField] int _currentAmmo;*/
+    // Amount of hits the Player received
+    private int _hits = 0;
+    // Is Health boost active
+    private bool _isHealthBoostActive;
+    
 
     // Retrieve the laser prefab
     [SerializeField] GameObject _laserPrefab;
@@ -46,6 +45,27 @@ public class PlayerBehavior : MonoBehaviour
     AudioSource _audioSource;
     // Laser sound effects
     [SerializeField] AudioClip _laserSoundClip;
+    private bool _fireLaser = true;
+    private bool _isLaserBoostActive = true;
+
+    /*[SerializeField] AudioClip _noAmmoClip;
+    [SerializeField] int _laserFire = 15;
+    [SerializeField] int _laserMax = 15;
+    [SerializeField] int _laserMin = 0;
+    */
+
+    // Homing Missile prefab
+    /*[SerializeField] Transform _target;
+    private Rigidbody2D _rb;
+    [SerializeField] float _rotateSpeed;
+    private bool _isHomingMissileActive;*/
+
+    // Is Ammo powerup active
+    /*[SerializeField] private bool _isAmmoActive;
+    // Maximum ammo amount for the Player
+    [SerializeField] private int _maxAmmo;
+    // Current amount of ammo for Player
+    [SerializeField] int _currentAmmo;*/
 
     // Start is called before the first frame update
     void Start()
@@ -88,33 +108,58 @@ public class PlayerBehavior : MonoBehaviour
         // instantiate the laser from the player at an offset of 0.8 meters above the Player.
         // Turn off canFire, and make the Player wait 0.3 seconds to shoot again
         if (Input.GetKeyDown(KeyCode.Space) && Time.time > _canFire)
-        {
-            _canFire = Time.time + _fireRate;
+        {            
             FireLaser();
         }
     }
 
     private void FireLaser()
     {
-        // IF space key is pressed,
-        // IF tripleShotActive is True
-        // fire TripleShot lasers prefab
-        // Else, fire one laser shot        
-        if (_isTripleShotActive)
-        {
-            Instantiate(_tripleShotPrefab, transform.position, Quaternion.identity);
-            //_currentAmmo--;
-        }
-        else
-        {
-            Instantiate(_laserPrefab, transform.position + new Vector3(0, 1.05f, 0), Quaternion.identity);
-            //_currentAmmo--;
-        }
+        _canFire = Time.time + _fireRate;
+        // Set the laserFire to be Clamped between the minimum and maximum amount allowed
+        //_laserFire = Mathf.Clamp((int)_laserFire, (int)_laserMin, (int)_laserMax);
 
-        // Set the Audio Source's Clip setting to the Laser Sound clip
-        _audioSource.clip = _laserSoundClip;
-        // Play Laser Sound clip
-        _audioSource.Play();
+        if (_canFire > Time.time && _fireLaser) // Check if canFire is greater + fireLaser is True
+        {
+            if (_isTripleShotActive)
+            {
+                Instantiate(_tripleShotPrefab, transform.position, Quaternion.identity);
+                //_laserFire -= 3;
+            }
+            else
+            {
+                Instantiate(_laserPrefab, transform.position + new Vector3(0, 1.05f, 0), Quaternion.identity);
+                //_laserFire--;
+            }
+
+            // Use UI Manager's LaserUpdate() to display lasers amount
+            //_uiManager.LaserUpdate(_laserFire);
+            // Set the Audio Source's Clip setting to the Laser Sound clip
+            _audioSource.clip = _laserSoundClip;
+            // Play Laser Sound clip
+            _audioSource.Play();
+
+            // Update UI Manager Laser Update text field
+
+            /*if (_laserFire < 1)
+            {
+                StopShooting();
+                _audioSource.Stop();
+                _audioSource.clip = _noAmmoClip;
+                //_audioSource.loop = _noAmmoClip;
+                _audioSource.Play();
+            }
+            else
+            {
+                _audioSource.loop = false;
+                _audioSource.clip = _laserSoundClip;
+            }*/
+        }              
+    }
+
+    void StopShooting()
+    {
+        _fireLaser = false;
     }
 
     void PlayerMovement()
@@ -125,7 +170,7 @@ public class PlayerBehavior : MonoBehaviour
         Vector3 direction = new Vector3(horizontalInput, verticalInput, 0);
         transform.Translate(direction * _speed * Time.deltaTime);
 
-        transform.position = new Vector3(transform.position.x, Mathf.Clamp(transform.position.y, -4.3f, 0), 0);
+        transform.position = new Vector3(transform.position.x, Mathf.Clamp(transform.position.y, -5.2f, 0), 0);
         
         if (transform.position.x >= 11f)
         {
@@ -147,7 +192,29 @@ public class PlayerBehavior : MonoBehaviour
             return;
         }
 
-        _lives -= 1;
+        _hits += 1;
+
+        if (_hits == 1)
+        {
+            _rightEngine.SetActive(true);
+            //_shield.GetComponent<SpriteRenderer>().material.color = Color.yellow;
+        }
+
+        if (_hits == 2)
+        {
+            _leftEngine.SetActive(true);
+            //_shield.GetComponent<SpriteRenderer>().material.color = Color.blue;
+        }
+
+        if (_hits == 3)
+        {
+            _lives -= 1;
+            _hits = 0;
+            _rightEngine.SetActive(false);
+            _leftEngine.SetActive(false);
+        }
+
+        /*_lives -= 1;
 
         if (_lives == 2)
         {
@@ -156,7 +223,7 @@ public class PlayerBehavior : MonoBehaviour
         else if (_lives == 1)
         {
             _leftEngine.SetActive(true);
-        }
+        }*/
 
         _uiManager.UpdateLives(_lives);
 
@@ -216,6 +283,26 @@ public class PlayerBehavior : MonoBehaviour
     {        
         _isShieldActive = true;
         _shield.SetActive(true);
+
+        switch (_hits)
+        {
+            case 0:
+                _shield.GetComponent<SpriteRenderer>().material.color = Color.white;
+                break;
+            case 1:
+                _shield.GetComponent<SpriteRenderer>().material.color = Color.yellow;
+                break;
+            case 2:
+                _shield.GetComponent<SpriteRenderer>().material.color = Color.blue;
+                break;
+            case 3:
+                _shield.GetComponent<SpriteRenderer>().material.color = Color.red;
+                break;
+            default:
+                Debug.Log("No shields activated!");
+                break;
+        }
+
         // begin the power down coroutine for the Shield
         StartCoroutine(ShieldPowerDownRoutine());
     }
@@ -223,29 +310,42 @@ public class PlayerBehavior : MonoBehaviour
     IEnumerator ShieldPowerDownRoutine()
     {
         // Wait 5 seconds 
-        yield return new WaitForSeconds(5f);
+        yield return new WaitForSeconds(15f);
         // Set isTripleShotActive to False
         _isShieldActive = false;
         _shield.SetActive(false);
     }
 
-    /*public void AmmoActive()
+    public void HealthActive()
     {
-        _isAmmoActive = true;
-        // Current Ammo set to the Max Ammo amount
-        _currentAmmo += _maxAmmo;
-        // Adjust Current Ammo amount to each laser shot
-        if (_currentAmmo > _maxAmmo)
-        {
-            _currentAmmo = _maxAmmo;
-        }
+        //float spawnDelay = Time.time + 60f;
+        _isHealthBoostActive = true;
+        _lives += 1;
+        _hits = 0;
+        _leftEngine.SetActive(false);
+        _rightEngine.SetActive(false);
 
-        StartCoroutine(AmmoPowerDownRoutine());
+        if (_lives > 3)
+        {
+            _lives = 3;
+        }
+        _uiManager.UpdateLives(_lives);
     }
 
-    IEnumerator AmmoPowerDownRoutine()
+    /*public void LaserBoostActive()
     {
-        yield return new WaitForSeconds(5f);
-        _isAmmoActive = false;
+        _isLaserBoostActive = true;
+        _fireLaser = true;
+        _laserFire = _laserMax;
+        _uiManager.LaserUpdate(_laserFire);
+        _audioSource.Stop();
+
+        StartCoroutine(LaserBoostPowerDownRoutine());
+    }
+
+    private IEnumerator LaserBoostPowerDownRoutine()
+    {
+        yield return new WaitForSeconds(0.5f);
+        _isLaserBoostActive = false;
     }*/
 }

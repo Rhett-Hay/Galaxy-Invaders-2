@@ -19,9 +19,13 @@ public class UIManager : MonoBehaviour
     // Access the Game Manager
     private GameManager _gameManager;
 
+    [SerializeField] TMPro.TMP_Text _laserText;
+
     // Start is called before the first frame update
     void Start()
     {
+        // Assign Laser text field
+        _laserText.text = "LASERS: " + 15;
         // Assign Score_text to zero at the beginning of the game
         _scoreText.text = "SCORE:      " + 0;
         // Turn off Game Over text object when game starts
@@ -35,6 +39,10 @@ public class UIManager : MonoBehaviour
         }
     }
 
+    public void LaserUpdate(int laserAmount)
+    {
+        _laserText.text = "LASERS: " + laserAmount.ToString();
+    }
     public void UpdateScore(int playerScore)
     {
         _scoreText.text = "SCORE:      " + playerScore.ToString();
